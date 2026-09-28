@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập - JWT Spring Boot 3 Authentication</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3.2 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: rgba(17, 24, 39, 0.78);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --input-bg: rgba(15, 23, 42, 0.65);
+            --input-border: rgba(255, 255, 255, 0.12);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Lighting / Mesh Glow Background */
+        .ambient-glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(100px);
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.45;
+        }
+        .glow-1 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+            top: -100px;
+            left: -100px;
+            animation: pulse 8s ease-in-out infinite alternate;
+        }
+        .glow-2 {
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, #ec4899 0%, transparent 70%);
+            bottom: -80px;
+            right: -80px;
+            animation: pulse 10s ease-in-out infinite alternate-reverse;
+        }
+        .glow-3 {
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, #38bdf8 0%, transparent 70%);
+            top: 40%;
+            left: 60%;
+            transform: translate(-50%, -50%);
+            opacity: 0.25;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(30px, 30px); }
+        }
+
+        /* Login Card Container */
+        .login-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 24px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+            padding: 2.75rem 2.25rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .login-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #6366f1, #a855f7, #ec4899);
+        }
+
+        /* Header / Logo Badge */
+        .brand-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .brand-icon {
+            width: 62px;
+            height: 62px;
+            background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(168, 85, 247, 0.2));
+            border: 1px solid rgba(168, 85, 247, 0.35);
+            border-radius: 18px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            color: #a855f7;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 8px 20px -4px var(--accent-glow);
+        }
+
+        .brand-header h3 {
+            font-size: 1.65rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            color: #ffffff;
+            margin-bottom: 0.35rem;
+        }
+
+        .brand-header p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 400;
+        }
+
+        /* Form Controls */
+        .form-group-custom {
+            margin-bottom: 1.35rem;
+        }
+
+        .form-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #cbd5e1;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 1rem;
+            color: #64748b;
+            font-size: 1.1rem;
+            pointer-events: none;
+            transition: color 0.2s ease;
+        }
+
+        .form-control {
+            background-color: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 14px;
+            color: #f8fafc;
+            font-size: 0.95rem;
+            padding: 0.82rem 1rem 0.82rem 2.85rem;
+            transition: all 0.25s ease;
+            width: 100%;
+        }
+
+        .form-control::placeholder {
+            color: #64748b;
+            font-size: 0.9rem;
+        }
+
+        .form-control:focus {
+            background-color: rgba(15, 23, 42, 0.9);
+            border-color: #818cf8;
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.25);
+            color: #ffffff;
+            outline: none;
+        }
+
+        .input-wrapper:focus-within .input-icon {
+            color: #a855f7;
+        }
+
+        /* Password Toggle */
+        .btn-toggle-pwd {
+            position: absolute;
+            right: 0.85rem;
+            background: none;
+            border: none;
+            color: #64748b;
+            cursor: pointer;
+            padding: 0.35rem;
+            font-size: 1.1rem;
+            transition: color 0.2s ease;
+        }
+
+        .btn-toggle-pwd:hover {
+            color: #cbd5e1;
+        }
+
+        /* Action Buttons */
+        .btn-login {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #d946ef 100%);
+            border: none;
+            border-radius: 14px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 1rem;
+            padding: 0.85rem;
+            letter-spacing: 0.01em;
+            box-shadow: 0 10px 25px -5px rgba(99, 102, 241, 0.45);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+        }
+
+        .btn-login:hover {
+            background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #c026d3 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(168, 85, 247, 0.55);
+            color: #ffffff;
+        }
+
+        .btn-login:active {
+            transform: translateY(0);
+        }
+
+        /* System Info Badges */
+        .system-badges {
+            margin-top: 1.75rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex;
+            justify-content: center;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+
+        .badge-pill {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.07);
+            border-radius: 20px;
+            padding: 0.35rem 0.8rem;
+            font-size: 0.75rem;
+            color: #94a3b8;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.2s ease;
+        }
+
+        .badge-pill:hover {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e2e8f0;
+            border-color: rgba(255, 255, 255, 0.15);
+        }
+
+        .badge-pill i {
+            color: #38bdf8;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient Background Lighting -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+    <div class="ambient-glow glow-3"></div>
+
+    <div class="login-wrapper">
+        <div class="login-card">
+            <!-- Brand & Heading -->
+            <div class="brand-header">
+                <div class="brand-icon">
+                    <i class="bi bi-shield-lock-fill"></i>
+                </div>
+                <h3>Cổng Đăng Nhập</h3>
+                <p>Hệ thống xác thực bảo mật chuẩn Nimbus JWT</p>
+            </div>
+
+            <!-- Login Form (Giữ nguyên form id, email, password, Login button) -->
+            <form id="loginForm">
+                <div class="form-group-custom">
+                    <label for="email" class="form-label">
+                        <i class="bi bi-envelope"></i> Email Tài Khoản
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-person input-icon"></i>
+                        <input type="email" class="form-control" id="email" placeholder="admin@example.com" required autocomplete="email" autofocus>
+                    </div>
+                </div>
+
+                <div class="form-group-custom">
+                    <label for="password" class="form-label">
+                        <i class="bi bi-key"></i> Mật Khẩu
+                    </label>
+                    <div class="input-wrapper">
+                        <i class="bi bi-lock input-icon"></i>
+                        <input type="password" class="form-control" id="password" placeholder="••••••••" required autocomplete="current-password" style="padding-right: 2.85rem;">
+                        <button type="button" class="btn-toggle-pwd" id="togglePassword" title="Hiện / Ẩn mật khẩu" tabindex="-1">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <button type="button" id="Login" class="btn btn-login">
+                        <span>Đăng Nhập</span>
+                        <i class="bi bi-arrow-right-short fs-5"></i>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Bottom Specs / Badges -->
+            <div class="system-badges">
+                <div class="badge-pill">
+                    <i class="bi bi-check2-circle text-success"></i> Spring Boot 3.2
+                </div>
+                <div class="badge-pill">
+                    <i class="bi bi-cpu"></i> Stateless JWT
+                </div>
+                <div class="badge-pill">
+                    <i class="bi bi-shield-check text-info"></i> Nimbus JOSE
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery 3.7.1 CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap 5.3.2 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- UI Helper: Enter Key Support & Password Eye Toggle -->
+    <script>
+        $(document).ready(function() {
+            // Nhấn Enter trên ô email hoặc password sẽ tự động kích hoạt nút #Login
+            $('#email, #password').keypress(function (e) {
+                if (e.which === 13) {
+                    $('#Login').click();
+                }
+            });
+
+            // Toggle show/hide password
+            $('#togglePassword').click(function () {
+                var passwordInput = $('#password');
+                var icon = $(this).find('i');
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    icon.removeClass('bi-eye').addClass('bi-eye-slash');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    icon.removeClass('bi-eye-slash').addClass('bi-eye');
+                }
+            });
+        });
+    </script>
+
+    <!-- Main JS (Giữ nguyên toàn bộ logic gọi API /auth/login) -->
+    <script th:src="@{/js/mainjs.js}" src="/js/mainjs.js"></script>
+</body>
+</html>

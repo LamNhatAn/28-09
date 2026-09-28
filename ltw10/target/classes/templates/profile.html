@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thông Tin Người Dùng - Spring Boot 3 REST API</title>
+    <!-- Google Fonts: Plus Jakarta Sans -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3.2 CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --bg-dark: #0a0e17;
+            --card-bg: rgba(17, 24, 39, 0.82);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --accent-glow: rgba(99, 102, 241, 0.35);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 1rem;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Ambient Glow Background */
+        .ambient-glow {
+            position: fixed;
+            border-radius: 50%;
+            filter: blur(110px);
+            z-index: 0;
+            pointer-events: none;
+            opacity: 0.4;
+        }
+        .glow-1 {
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, #6366f1 0%, transparent 70%);
+            top: -120px;
+            left: -100px;
+            animation: pulse 9s ease-in-out infinite alternate;
+        }
+        .glow-2 {
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, #06b6d4 0%, transparent 70%);
+            bottom: -100px;
+            right: -100px;
+            animation: pulse 11s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.12) translate(25px, 25px); }
+        }
+
+        /* Container */
+        .profile-wrapper {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+            max-width: 580px;
+        }
+
+        .profile-container {
+            background: var(--card-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--card-border);
+            border-radius: 28px;
+            box-shadow: 0 30px 60px -15px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.06);
+            padding: 3rem 2.25rem;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .profile-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #38bdf8, #6366f1, #a855f7);
+        }
+
+        /* Status Header */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            background: rgba(16, 185, 129, 0.12);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 0.35rem 0.9rem;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 1.5rem;
+            letter-spacing: 0.02em;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 8px #10b981;
+            animation: blink 2s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+
+        /* Avatar Container */
+        .avatar-box {
+            position: relative;
+            display: inline-block;
+            margin-bottom: 1.5rem;
+        }
+
+        .avatar-glow-ring {
+            position: absolute;
+            inset: -5px;
+            background: linear-gradient(135deg, #38bdf8, #6366f1, #d946ef);
+            border-radius: 50%;
+            z-index: 1;
+            filter: blur(2px);
+        }
+
+        #images {
+            position: relative;
+            z-index: 2;
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            object-fit: cover;
+            background-color: #1e293b;
+            border: 4px solid #0f172a;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease;
+        }
+
+        #images:hover {
+            transform: scale(1.05);
+        }
+
+        /* Profile Text Injected by mainjs.js */
+        #profile {
+            margin-bottom: 2rem;
+            min-height: 70px;
+        }
+
+        #profile h4 {
+            font-size: 1.55rem;
+            font-weight: 700;
+            color: #ffffff;
+            letter-spacing: -0.01em;
+            margin-bottom: 0.4rem;
+        }
+
+        #profile p, #profile .text-muted {
+            color: #94a3b8 !important;
+            font-size: 0.95rem;
+            font-weight: 400;
+            margin-bottom: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.4rem;
+        }
+
+        /* Information Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-bottom: 2rem;
+            text-align: left;
+        }
+
+        .info-item {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            border-radius: 16px;
+            padding: 1rem 1.15rem;
+            transition: all 0.25s ease;
+        }
+
+        .info-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            border-color: rgba(255, 255, 255, 0.12);
+            transform: translateY(-2px);
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 0.25rem;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .info-value {
+            font-size: 0.95rem;
+            color: #f1f5f9;
+            font-weight: 600;
+        }
+
+        /* Logout Button */
+        #logout {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #b91c1c 100%);
+            border: none;
+            border-radius: 14px;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.8rem 2.5rem;
+            letter-spacing: 0.02em;
+            box-shadow: 0 10px 25px -5px rgba(239, 68, 68, 0.4);
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        #logout:hover {
+            background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 15px 30px -5px rgba(239, 68, 68, 0.55);
+            color: #ffffff;
+        }
+
+        #logout:active {
+            transform: translateY(0);
+        }
+
+        /* Pulse Loading Text Animation */
+        .loading-pulse {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: #94a3b8;
+            font-size: 0.95rem;
+        }
+
+        .spinner-mini {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Ambient Background Lighting -->
+    <div class="ambient-glow glow-1"></div>
+    <div class="ambient-glow glow-2"></div>
+
+    <div class="profile-wrapper">
+        <div class="profile-container">
+            <!-- Security Status Pill -->
+            <div class="status-badge">
+                <span class="status-dot"></span>
+                <span>Phiên Làm Việc An Toàn (Bearer JWT)</span>
+            </div>
+
+            <!-- Avatar -->
+            <div class="avatar-box">
+                <div class="avatar-glow-ring"></div>
+                <img id="images" width="110" height="110" alt="Avatar" src="/images/default-avatar.png">
+            </div>
+
+            <!-- Profile Info Container (mainjs.js will inject h4 and p inside here) -->
+            <div id="profile">
+                <div class="loading-pulse">
+                    <span class="spinner-mini"></span>
+                    <span>Đang đồng bộ dữ liệu người dùng qua AJAX...</span>
+                </div>
+            </div>
+
+            <!-- Account & Security Info Grid -->
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="bi bi-shield-check text-info"></i> Phương thức
+                    </div>
+                    <div class="info-value">Nimbus JWT (Stateless)</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="bi bi-lock text-success"></i> Quyền truy cập
+                    </div>
+                    <div class="info-value">Người dùng đã xác thực</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="bi bi-server text-warning"></i> Công nghệ Backend
+                    </div>
+                    <div class="info-value">Spring Boot 3.2.5 REST</div>
+                </div>
+                <div class="info-item">
+                    <div class="info-label">
+                        <i class="bi bi-broadcast text-primary"></i> Giao thức truyền
+                    </div>
+                    <div class="info-value">jQuery AJAX / Bearer</div>
+                </div>
+            </div>
+
+            <!-- Logout Button (id="logout" required by mainjs.js) -->
+            <div>
+                <button type="button" id="logout" class="btn">
+                    <i class="bi bi-box-arrow-right"></i>
+                    <span>Đăng Xuất</span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- jQuery 3.7.1 CDN -->
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <!-- Bootstrap 5.3.2 JS Bundle CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Main JS (Giữ nguyên toàn bộ logic AJAX /users/me và #logout) -->
+    <script th:src="@{/js/mainjs.js}" src="/js/mainjs.js"></script>
+</body>
+</html>
